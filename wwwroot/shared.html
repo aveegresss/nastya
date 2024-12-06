@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Общая заметка</title>
+  <base href="/" />
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="shared-note" class="shared-container">
+    <h2 id="note-title"></h2>
+    <p id="note-text"></p>
+    <div id="note-date"></div>
+  </div>
+  <script>
+    const token = window.location.pathname.split('/').pop();
+    const ws = new WebSocket('ws://localhost:5088/ws');
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        action: 'get_shared_note',
+        token: token
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.status === 'success') {
+        document.getElementById('note-title').textContent = data.note.title;
+        document.getElementById('note-text').textContent = data.note.text;
+        document.getElementById('note-date').textContent = new Date(data.note.date).toLocaleString();
+      } else {
+        document.getElementById('shared-note').innerHTML = '<h2>Заметка не найдена</h2>';
+      }
+    };
+  </script>
+</body>
+
+</html>

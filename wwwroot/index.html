@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Заметки</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="app">
+    <!-- Контейнер для регистрации и авторизации -->
+    <div id="auth-container">
+      <h2>Вход или регистрация</h2>
+      <input type="text" id="username" placeholder="Имя пользователя">
+      <input type="password" id="password" placeholder="Пароль">
+      <button id="login-btn">Войти</button>
+      <button id="register-btn">Регистрация</button>
+    </div>
+
+    <!-- Контейнер для заметок -->
+    <div id="notes-container" style="display: none;">
+      <div class="header">
+        <h2>Мои заметки</h2>
+        <button id="logout-btn">Выйти</button>
+      </div>
+
+      <div class="folder-navigation">
+        <select id="folder-select" class="folder-select">
+          <option value="">Корневая папка</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button id="add-folder-btn">Добавить папку</button>
+        <button id="add-note-btn">Добавить заметку</button>
+      </div>
+
+      <div id="notes-grid" class="notes-grid"></div>
+    </div>
+
+    <!-- Обновленное модальное окно -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span id="close-modal" class="close">&times;</span>
+        <h3 id="modal-title"></h3>
+        <input type="text" id="item-title" placeholder="Название">
+        <textarea id="item-text" placeholder="Текст"></textarea>
+        <input type="file" id="item-image" accept="image/*">
+        <img id="image-preview" style="display: none; max-width: 200px;">
+        <select id="parent-folder">
+          <option value="">Без папки</option>
+        </select>
+        <button id="save-item-btn">Сохранить</button>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    <script src="/js/websocket.js"></script>
+</body>
+
+</html>
