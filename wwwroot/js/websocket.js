@@ -129,7 +129,7 @@ document.getElementById("add-note-btn").addEventListener("click", function () {
   openModal("Создать заметку", false);
 });
 
-document.getElementById("save-item-btn").onclick = function () {
+document.getElementById("save-item-btn").onclick = async function () {
   const authToken = localStorage.getItem("auth_token");
   const title = document.getElementById("item-title").value;
   const text = document.getElementById("item-text").value;
@@ -139,31 +139,7 @@ document.getElementById("save-item-btn").onclick = function () {
   const itemId = document.getElementById("modal").dataset.itemId;
   const parentId = document.getElementById("parent-folder").value;
 
-  // Если есть файл, конвертируем его в base64
-  if (imageInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const message = {
-        action: isEditing ? "edit_note" : "create_note",
-        auth_token: authToken,
-        title: title,
-        text: text,
-        is_folder: isFolder,
-        image: e.target.result
-      };
-
-      if (parentId) {
-        message.parent_id = parseInt(parentId);
-      }
-
-      if (isEditing) {
-        message.id = parseInt(itemId);
-      }
-
-      sendMessage(message);
-    };
-    reader.readAsDataURL(imageInput.files[0]);
-  } else {
+  try {
     const message = {
       action: isEditing ? "edit_note" : "create_note",
       auth_token: authToken,
@@ -171,6 +147,12 @@ document.getElementById("save-item-btn").onclick = function () {
       text: text,
       is_folder: isFolder
     };
+
+    // Добавляем изображение, если оно есть
+    if (imageInput.files[0]) {
+      const compressedImageBase64 = await compressImage(imageInput.files[0]);
+      message.image = compressedImageBase64;
+    }
 
     if (parentId) {
       message.parent_id = parseInt(parentId);
@@ -181,6 +163,9 @@ document.getElementById("save-item-btn").onclick = function () {
     }
 
     sendMessage(message);
+  } catch (error) {
+    alert('Ошибка при обработке изображения: ' + error);
+    console.error(error);
   }
 };
 
@@ -365,20 +350,19 @@ document.getElementById('item-image').addEventListener('change', async function 
     }
 
     try {
-      const compressedImage = await compressImage(file);
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const preview = document.getElementById('image-preview');
-        preview.innerHTML = `
-          <img 
-            src="${e.target.result}" 
-            alt="Предварительный просмотр"
-            style="max-width: 100%; max-height: 300px; object-fit: contain;"
-          >`;
-      }
-      reader.readAsDataURL(compressedImage);
+      const compressedImageBase64 = await compressImage(file);
+      const preview = document.getElementById('image-preview');
+
+      // Показываем изображение напрямую через data URL
+      preview.innerHTML = `
+        <img 
+          src="data:image/jpeg;base64,${compressedImageBase64}" 
+          alt="Предварительный просмотр"
+          style="max-width: 100%; max-height: 300px; object-fit: contain;"
+        >`;
+
     } catch (error) {
-      alert('Ошибка при обработке изображения');
+      alert('Ошибка при обработке изображения: ' + error);
       console.error(error);
       this.value = '';
     }
@@ -392,48 +376,49 @@ async function compressImage(file) {
       reader.onload = function (e) {
         const img = new Image();
         img.onload = function () {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
+          try {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
 
-          // Пропорциональное сжатие
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height = Math.round((height * MAX_WIDTH) / width);
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width = Math.round((width * MAX_HEIGHT) / height);
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Конвертируем в JPEG с указанным качеством
-          canvas.toBlob((blob) => {
-            if (blob) {
-              resolve(new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now()
-              }));
+            const maxDimension = 600;
+            if (width > height) {
+              if (width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              }
             } else {
-              reject(new Error('Ошибка создания blob'));
+              if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
             }
-          }, 'image/jpeg', JPEG_QUALITY);
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Получаем только данные Base64, без префикса data:image/jpeg;base64,
+            const compressedData = canvas.toDataURL('image/jpeg', 0.3).split(',')[1];
+
+            if (compressedData.length > 500 * 1024) {
+              reject('Изображение слишком большое даже после сжатия');
+              return;
+            }
+
+            resolve(compressedData); // Отправляем только Base64 данные
+          } catch (err) {
+            reject(`Ошибка при сжатии изображения: ${err.message}`);
+          }
         };
-        img.onerror = () => reject(new Error('Ошибка загрузки изображения'));
+        img.onerror = () => reject('Ошибка загрузки изображения');
         img.src = e.target.result;
       };
-      reader.onerror = () => reject(new Error('Ошибка чтения файла'));
+      reader.onerror = () => reject('Ошибка чтения файла');
       reader.readAsDataURL(file);
-    } catch (error) {
-      reject(error);
+    } catch (err) {
+      reject(`Общая ошибка обработки: ${err.message}`);
     }
   });
 }

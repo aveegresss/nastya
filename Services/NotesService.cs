@@ -22,25 +22,19 @@ public class NotesService
   {
     try
     {
-      // Создаем директорию если её нет
       var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
       if (!Directory.Exists(uploadPath))
       {
         Directory.CreateDirectory(uploadPath);
       }
 
-      // Извлекаем данные из base64
-      var base64Data = base64Image.Split(',')[1];
-      var imageBytes = Convert.FromBase64String(base64Data);
+      var imageBytes = Convert.FromBase64String(base64Image);
 
-      // Генерируем уникальное имя файла
       var fileName = $"{Guid.NewGuid()}.jpg";
       var filePath = Path.Combine(uploadPath, fileName);
 
-      // Сохраняем файл
       File.WriteAllBytes(filePath, imageBytes);
 
-      // Возвращаем относительный путь
       return $"/uploads/{fileName}";
     }
     catch (Exception ex)
