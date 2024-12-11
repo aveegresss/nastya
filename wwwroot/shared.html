@@ -17,7 +17,7 @@
   </div>
   <script>
     const token = window.location.pathname.split('/').pop();
-    const ws = new WebSocket('ws://localhost:5088/ws');
+    const ws = new WebSocket('ws://localhost:5089/ws');
 
     ws.onopen = () => {
       ws.send(JSON.stringify({

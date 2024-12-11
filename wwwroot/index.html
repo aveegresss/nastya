@@ -25,39 +25,34 @@
         <h2>Мои заметки</h2>
         <button id="logout-btn">Выйти</button>
       </div>
-
-      <div class="folder-navigation">
-        <select id="folder-select" class="folder-select">
-          <option value="">Корневая папка</option>
-        </select>
-      </div>
-
       <div class="actions">
         <button id="add-folder-btn">Добавить папку</button>
         <button id="add-note-btn">Добавить заметку</button>
       </div>
-
-      <div id="notes-grid" class="notes-grid"></div>
+      <div id="notes-tree"></div>
     </div>
 
-    <!-- Обновленное модальное окно -->
-    <div id="modal" class="modal">
+    <!-- Окно для добавления/редактирования -->
+    <div id="modal" class="modal" style="display: none;">
       <div class="modal-content">
         <span id="close-modal" class="close">&times;</span>
         <h3 id="modal-title"></h3>
         <input type="text" id="item-title" placeholder="Название">
         <textarea id="item-text" placeholder="Текст"></textarea>
-        <input type="file" id="item-image" accept="image/*">
-        <img id="image-preview" style="display: none; max-width: 200px;">
+        <div class="image-upload">
+          <input type="file" id="item-image" accept="image/*">
+          <div id="image-preview"></div>
+        </div>
         <select id="parent-folder">
           <option value="">Без папки</option>
         </select>
         <button id="save-item-btn">Сохранить</button>
       </div>
     </div>
+  </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
-    <script src="/js/websocket.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+  <script src="/js/websocket.js"></script>
 </body>
 
 </html>

@@ -1,4 +1,9 @@
-const socket = new WebSocket("ws://localhost:5088/ws");
+const socket = new WebSocket("ws://localhost:5089/ws");
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_WIDTH = 1024;
+const MAX_HEIGHT = 1024;
+const JPEG_QUALITY = 0.7;
 
 socket.onopen = function () {
   console.log("WebSocket открыт.");
@@ -49,6 +54,15 @@ function handleResponse(data) {
       break;
     case "create_note":
     case "edit_note":
+      if (data.status === "success") {
+        getNotesStructure(); 
+        closeModal();
+        document.getElementById('image-preview').innerHTML = '';
+        document.getElementById('item-image').value = '';
+      } else {
+        alert("Ошибка: " + data.message);
+      }
+      break;
     case "delete_note":
       if (data.status === "success") {
         getNotesStructure();
@@ -119,28 +133,55 @@ document.getElementById("save-item-btn").onclick = function () {
   const authToken = localStorage.getItem("auth_token");
   const title = document.getElementById("item-title").value;
   const text = document.getElementById("item-text").value;
+  const imageInput = document.getElementById("item-image");
   const isFolder = document.getElementById("modal").dataset.isFolder === "true";
   const isEditing = document.getElementById("modal").dataset.editing === "true";
   const itemId = document.getElementById("modal").dataset.itemId;
   const parentId = document.getElementById("parent-folder").value;
 
-  const message = {
-    action: isEditing ? "edit_note" : "create_note",
-    auth_token: authToken,
-    title: title,
-    text: text,
-    is_folder: isFolder
-  };
+  // Если есть файл, конвертируем его в base64
+  if (imageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const message = {
+        action: isEditing ? "edit_note" : "create_note",
+        auth_token: authToken,
+        title: title,
+        text: text,
+        is_folder: isFolder,
+        image: e.target.result
+      };
 
-  if (parentId) {
-    message.parent_id = parseInt(parentId);
+      if (parentId) {
+        message.parent_id = parseInt(parentId);
+      }
+
+      if (isEditing) {
+        message.id = parseInt(itemId);
+      }
+
+      sendMessage(message);
+    };
+    reader.readAsDataURL(imageInput.files[0]);
+  } else {
+    const message = {
+      action: isEditing ? "edit_note" : "create_note",
+      auth_token: authToken,
+      title: title,
+      text: text,
+      is_folder: isFolder
+    };
+
+    if (parentId) {
+      message.parent_id = parseInt(parentId);
+    }
+
+    if (isEditing) {
+      message.id = parseInt(itemId);
+    }
+
+    sendMessage(message);
   }
-
-  if (isEditing) {
-    message.id = parseInt(itemId);
-  }
-
-  sendMessage(message);
 };
 
 document.getElementById("close-modal").addEventListener("click", function () {
@@ -192,6 +233,19 @@ function renderNotesTreeRecursive(item, container) {
       renderNotesTreeRecursive(child, childrenContainer);
     });
   } else {
+    if (item.image_path) {
+      console.log('Image path:', item.image_path);
+      const imageElement = document.createElement("img");
+      imageElement.onload = () => console.log('Image loaded:', item.image_path);
+      imageElement.onerror = () => console.error('Image load error:', item.image_path);
+      imageElement.src = item.image_path;
+      imageElement.className = "note-image"; 
+      imageElement.style.maxWidth = "200px"; 
+      imageElement.style.maxHeight = "200px"; 
+      imageElement.alt = "Изображение к заметке";
+      itemElement.appendChild(imageElement);
+    }
+
     const textElement = document.createElement("p");
     textElement.textContent = item.text;
     itemElement.appendChild(textElement);
@@ -294,3 +348,93 @@ function updateFolderSelect(structure, parentId = null) {
 
   addOptions(structure);
 }
+
+document.getElementById('item-image').addEventListener('change', async function (e) {
+  const file = e.target.files[0];
+  if (file) {
+    if (!file.type.startsWith('image/')) {
+      alert('Пожалуйста, выберите изображение');
+      this.value = '';
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      alert('Размер файла не должен превышать 10MB');
+      this.value = '';
+      return;
+    }
+
+    try {
+      const compressedImage = await compressImage(file);
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = `
+          <img 
+            src="${e.target.result}" 
+            alt="Предварительный просмотр"
+            style="max-width: 100%; max-height: 300px; object-fit: contain;"
+          >`;
+      }
+      reader.readAsDataURL(compressedImage);
+    } catch (error) {
+      alert('Ошибка при обработке изображения');
+      console.error(error);
+      this.value = '';
+    }
+  }
+});
+
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Пропорциональное сжатие
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Конвертируем в JPEG с указанным качеством
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              }));
+            } else {
+              reject(new Error('Ошибка создания blob'));
+            }
+          }, 'image/jpeg', JPEG_QUALITY);
+        };
+        img.onerror = () => reject(new Error('Ошибка загрузки изображения'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Ошибка чтения файла'));
+      reader.readAsDataURL(file);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+

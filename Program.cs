@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,17 @@ builder.Services.AddScoped<QRCodeGeneratorService>();
 builder.Services.AddScoped<NotesService>();
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<CipherService>();
+builder.Services.AddSingleton<IWebHostEnvironment>(builder.Environment);
+
+builder.Services.Configure<KestrelServerOptions>(options =>
+{
+  options.Limits.MaxRequestBodySize = 1024 * 1024 * 10; // 10MB
+});
+
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+  serverOptions.Limits.MaxRequestBodySize = 1024 * 1024 * 10; // 10MB
+});
 
 var app = builder.Build();
 

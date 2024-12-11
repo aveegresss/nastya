@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 public class NotesService
@@ -7,65 +8,144 @@ public class NotesService
   private readonly ApplicationDbContext _context;
   private readonly UsersService _usersService;
   private readonly CipherService _cipherService;
+  private readonly IWebHostEnvironment _environment;
 
-  public NotesService(ApplicationDbContext context, UsersService usersService)
+  public NotesService(ApplicationDbContext context, UsersService usersService, IWebHostEnvironment environment)
   {
     _context = context;
     _usersService = usersService;
     _cipherService = new CipherService();
+    _environment = environment;
+  }
+
+  private string SaveImage(string base64Image)
+  {
+    try
+    {
+      // Создаем директорию если её нет
+      var uploadPath = Path.Combine(_environment.WebRootPath, "uploads");
+      if (!Directory.Exists(uploadPath))
+      {
+        Directory.CreateDirectory(uploadPath);
+      }
+
+      // Извлекаем данные из base64
+      var base64Data = base64Image.Split(',')[1];
+      var imageBytes = Convert.FromBase64String(base64Data);
+
+      // Генерируем уникальное имя файла
+      var fileName = $"{Guid.NewGuid()}.jpg";
+      var filePath = Path.Combine(uploadPath, fileName);
+
+      // Сохраняем файл
+      File.WriteAllBytes(filePath, imageBytes);
+
+      // Возвращаем относительный путь
+      return $"/uploads/{fileName}";
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error saving image: {ex.Message}");
+      return null;
+    }
   }
 
   public string CreateNote(JsonElement json)
   {
-    var user = _usersService.GetUserByAuthToken(json.GetProperty("auth_token").GetString());
+    var authToken = json.GetProperty("auth_token").GetString();
+    var user = _context.Users.FirstOrDefault(u => u.AuthToken == authToken);
 
     if (user == null)
-      return JsonSerializer.Serialize(new { action = "create_note", status = "error", message = "Invalid auth token" });
+    {
+      return JsonSerializer.Serialize(new { action = "create_note", status = "error", message = "User not found" });
+    }
 
     var note = new Note
     {
       Title = _cipherService.Encrypt(json.GetProperty("title").GetString(), user.Username),
-      Text = json.TryGetProperty("text", out JsonElement textElement) ? _cipherService.Encrypt(textElement.GetString(), user.Username) : null,
-      Date = DateTime.Now,
-      IsDeleted = false,
-      UserId = user.Id,
+      Text = _cipherService.Encrypt(json.GetProperty("text").GetString(), user.Username),
       IsFolder = json.GetProperty("is_folder").GetBoolean(),
-      ParentId = json.TryGetProperty("parent_id", out JsonElement parentId) ? parentId.GetInt32() : (int?)null,
-      ShareToken = String.Empty
+      Date = DateTime.Now,
+      UserId = user.Id,
+      ShareToken = Guid.NewGuid().ToString()
     };
+
+    if (json.TryGetProperty("parent_id", out JsonElement parentIdElement))
+    {
+      note.ParentId = parentIdElement.GetInt32();
+    }
+
+    // Обработка изображения
+    if (json.TryGetProperty("image", out JsonElement imageElement))
+    {
+      var imagePath = SaveImage(imageElement.GetString());
+      if (imagePath != null)
+      {
+        note.ImagePath = imagePath;
+      }
+    }
 
     _context.Notes.Add(note);
     _context.SaveChanges();
 
-    return JsonSerializer.Serialize(new { action = "create_note", status = "success", id = note.Id });
+    return JsonSerializer.Serialize(new { action = "create_note", status = "success" });
   }
 
   public string EditNote(JsonElement json)
   {
-    var user = _usersService.GetUserByAuthToken(json.GetProperty("auth_token").GetString());
-    if (user == null)
-      return JsonSerializer.Serialize(new { action = "edit_note", status = "error", message = "Invalid auth token" });
+    var authToken = json.GetProperty("auth_token").GetString();
+    var user = _context.Users.FirstOrDefault(u => u.AuthToken == authToken);
 
-    var id = json.GetProperty("id").GetInt32();
-    var note = _context.Notes.FirstOrDefault(n => n.Id == id && n.UserId == user.Id);
-    if (note == null)
+    if (user == null)
+    {
+      return JsonSerializer.Serialize(new { action = "edit_note", status = "error", message = "User not found" });
+    }
+
+    var note = _context.Notes.FirstOrDefault(n => n.Id == json.GetProperty("id").GetInt32());
+
+    if (note == null || note.UserId != user.Id)
+    {
       return JsonSerializer.Serialize(new { action = "edit_note", status = "error", message = "Note not found" });
+    }
 
     note.Title = _cipherService.Encrypt(json.GetProperty("title").GetString(), user.Username);
     note.Text = _cipherService.Encrypt(json.GetProperty("text").GetString(), user.Username);
 
     if (json.TryGetProperty("parent_id", out JsonElement parentIdElement))
     {
-      note.ParentId = parentIdElement.ValueKind == JsonValueKind.Null ?
-          null :
-          parentIdElement.GetInt32();
+      note.ParentId = parentIdElement.GetInt32();
+    }
+    else
+    {
+      note.ParentId = null;
+    }
+
+    // Обработка изображения
+    if (json.TryGetProperty("image", out JsonElement imageElement))
+    {
+      // Удаляем старое изображение если есть
+      if (!string.IsNullOrEmpty(note.ImagePath))
+      {
+        var oldImagePath = Path.Combine(_environment.WebRootPath, note.ImagePath.TrimStart('/'));
+        if (File.Exists(oldImagePath))
+        {
+          File.Delete(oldImagePath);
+        }
+      }
+
+      var imagePath = SaveImage(imageElement.GetString());
+      if (imagePath != null)
+      {
+        note.ImagePath = imagePath;
+      }
     }
 
     _context.SaveChanges();
+
     return JsonSerializer.Serialize(new { action = "edit_note", status = "success" });
   }
 
-  public string DeleteNote(JsonElement json)
+public string DeleteNote(JsonElement json)
   {
     var user = _usersService.GetUserByAuthToken(json.GetProperty("auth_token").GetString());
 
@@ -163,7 +243,8 @@ public class NotesService
           id = child.Id,
           title = _cipherService.Decrypt(child.Title, username),
           is_folder = false,
-          text = _cipherService.Decrypt(child.Text, username)
+          text = _cipherService.Decrypt(child.Text, username),
+          image_path = child.ImagePath
         });
       }
     }
