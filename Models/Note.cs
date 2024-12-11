@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 public class Note
 {
   public int Id { get; set; }
@@ -10,7 +11,9 @@ public class Note
   public User User { get; set; } 
   public string ShareToken { get; set; }
 
+
   public bool IsFolder { get; set; }
+  [JsonPropertyName("parent_id")]
   public int? ParentId { get; set; }
   public Note Parent { get; set; }
   public List<Note> Children { get; set; }

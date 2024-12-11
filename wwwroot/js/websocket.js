@@ -191,52 +191,111 @@ function closeModal() {
 }
 
 function renderNotesTree(structure) {
-  const container = document.getElementById("notes-tree");
-  container.innerHTML = "";
-  structure.forEach(item => {
-    renderNotesTreeRecursive(item, container);
-  });
+  // Создаем селект для папок
+  const folderSelect = document.createElement('select');
+  folderSelect.className = 'folder-select';
+  folderSelect.innerHTML = '<option value="">Все заметки</option>';
+
+  // Добавляем папки в селект
+  function addFolderOptions(items, level = 0) {
+    items.forEach(item => {
+      if (item.is_folder) {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.text = '  '.repeat(level) + item.title;
+        folderSelect.appendChild(option);
+        if (item.children) {
+          addFolderOptions(item.children, level + 1);
+        }
+      }
+    });
+  }
+  addFolderOptions(structure);
+
+  // Создаем контейнер для заметок
+  const notesContent = document.createElement('div');
+  notesContent.className = 'notes-content';
+
+  // Обработчик изменения выбранной папки
+  folderSelect.onchange = () => {
+    const selectedFolderId = folderSelect.value;
+    renderNotes(structure, selectedFolderId, notesContent);
+  };
+
+  // Очищаем и добавляем элементы
+  const container = document.getElementById('notes-tree');
+  container.innerHTML = '';
+  container.appendChild(folderSelect);
+  container.appendChild(notesContent);
+
+  // Отображаем все заметки по умолчанию
+  renderNotes(structure, '', notesContent);
 }
 
-function renderNotesTreeRecursive(item, container) {
-  const itemElement = document.createElement("div");
-  itemElement.className = "note-item";
+function renderNotes(structure, folderId, container) {
+  container.innerHTML = '';
 
-  const titleElement = document.createElement("span");
-  titleElement.textContent = item.title;
-  itemElement.appendChild(titleElement);
+  function findAndRenderNotes(items) {
+    items.forEach(item => {
 
-  const actionsContainer = createItemActions(item);
-  itemElement.appendChild(actionsContainer);
+      if (!item.is_folder) {
+        // Приводим parent_id и folderId к строкам для корректного сравнения
+        const noteParentId = item.parent_id ? item.parent_id.toString() : '';
+        const selectedFolderId = folderId ? folderId.toString() : '';
 
-  if (item.is_folder) {
-    const childrenContainer = document.createElement("div");
-    childrenContainer.className = "children-container";
-    itemElement.appendChild(childrenContainer);
+        const showNote =
+          !selectedFolderId || // Показывать все если папка не выбрана  
+          (noteParentId === selectedFolderId); // Показывать заметки выбранной папки
 
-    item.children.forEach(function (child) {
-      renderNotesTreeRecursive(child, childrenContainer);
+        if (showNote) {
+          console.log('Добавляем заметку:', item.title);
+          const noteElement = createNoteElement(item);
+          container.appendChild(noteElement);
+        }
+      }
+
+      if (item.children && item.children.length > 0) {
+        findAndRenderNotes(item.children);
+      }
     });
-  } else {
-    if (item.image_path) {
-      console.log('Image path:', item.image_path);
-      const imageElement = document.createElement("img");
-      imageElement.onload = () => console.log('Image loaded:', item.image_path);
-      imageElement.onerror = () => console.error('Image load error:', item.image_path);
-      imageElement.src = item.image_path;
-      imageElement.className = "note-image"; 
-      imageElement.style.maxWidth = "200px"; 
-      imageElement.style.maxHeight = "200px"; 
-      imageElement.alt = "Изображение к заметке";
-      itemElement.appendChild(imageElement);
-    }
-
-    const textElement = document.createElement("p");
-    textElement.textContent = item.text;
-    itemElement.appendChild(textElement);
   }
 
-  container.appendChild(itemElement);
+  findAndRenderNotes(structure);
+
+  if (container.children.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'empty-message';
+    emptyMessage.textContent = folderId ? 'В этой папке нет заметок' : 'Нет заметок';
+    container.appendChild(emptyMessage);
+  }
+}
+
+function createNoteElement(item) {
+  const noteElement = document.createElement('div');
+  noteElement.className = 'note-item';
+
+  const titleElement = document.createElement('div');
+  titleElement.className = 'note-title';
+  titleElement.textContent = item.title;
+  noteElement.appendChild(titleElement);
+
+  if (item.image_path) {
+    const imageElement = document.createElement('img');
+    imageElement.src = item.image_path;
+    imageElement.className = 'note-image';
+    imageElement.alt = 'Изображение к заметке';
+    noteElement.appendChild(imageElement);
+  }
+
+  const textElement = document.createElement('div');
+  textElement.className = 'note-text';
+  textElement.textContent = item.text;
+  noteElement.appendChild(textElement);
+
+  const actionsContainer = createItemActions(item);
+  noteElement.appendChild(actionsContainer);
+
+  return noteElement;
 }
 
 function createItemActions(item) {
@@ -422,4 +481,3 @@ async function compressImage(file) {
     }
   });
 }
-

@@ -238,7 +238,8 @@ public string DeleteNote(JsonElement json)
           title = _cipherService.Decrypt(child.Title, username),
           is_folder = false,
           text = _cipherService.Decrypt(child.Text, username),
-          image_path = child.ImagePath
+          image_path = child.ImagePath,
+          parent_id = child.ParentId
         });
       }
     }
