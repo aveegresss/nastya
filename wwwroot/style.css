@@ -1,10 +1,16 @@
 /* General styles */
 body {
   font-family: Arial, sans-serif;
-  background-color: #e8f5e9;
+  background-color: #ffffff;
   color: #1b5e20;
   margin: 0;
   padding: 0;
+  background-image: url('./fonts/pictureArt.jpg'); /* Путь к вашему изображению */
+  background-repeat: repeat-y; /* Повтор по вертикали */
+  background-position: right;
+  background-size: 205px 205px;
+  position: relative;
+  z-index: 1;
 }
 
 h2 {
@@ -12,7 +18,6 @@ h2 {
 }
 
 /* Containers */
-#auth-container,
 #notes-container {
   width: 80%;
   max-width: 1200px;
@@ -30,7 +35,7 @@ h2 {
 }
 
 /* Forms */
-input[type="text"],
+/*input[type="text"],
 input[type="password"],
 textarea,
 .folder-select {
@@ -42,6 +47,27 @@ textarea,
   box-sizing: border-box;
   background-color: #fff;
   color: #1b5e20;
+}*/
+
+.loginWin {
+  box-sizing: border-box;
+  width: 450px;
+  height: 60px;
+  padding: 8px;
+  margin: 0 20px 10px 20px;
+  border: 0;
+  border-radius: 3px;
+  outline: none;
+  color: #000000;
+  font-size: 25px;
+  font-family: "Everlasting";
+  text-indent: 10px;
+  color: #000000 !important;
+  background-color: rgba(168, 168, 168, 0.48);
+}
+
+input:hover {
+  transform: scale(1.01);
 }
 
 textarea {
@@ -209,4 +235,107 @@ button:hover {
   color: #666;
   font-style: italic;
   grid-column: 1 / -1;
+}
+
+.windowLogin {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.windowBtn {
+  margin: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.printWin {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+button {
+  font-size: 20px;
+  font-family: "BulatovSPDemo";
+  height: 55px;
+  width: 280px;
+  margin: 10px 0 10px 0;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  background-color: rgb(0, 0, 0);
+  color: #fff;
+  padding: 5px;
+}
+
+button:hover {
+  background-color: #fff;
+  color: rgb(0, 0, 0);
+  transform: scale(1.08);
+  box-shadow: 0 0 15px 0 rgba(5, 5, 5, 0.3);
+}
+
+.ArtText {
+  font-family: Littlewitch_lenamay;
+  text-align: left;
+  padding: 20px;
+  font-size: 60px;
+  color: rgb(0, 0, 0);
+  background-color: #a8a8a8;
+  margin-top: 0;
+  margin-right: 205px;
+}
+
+.loginText {
+  font-family: Brushboy;
+  text-align: center;
+  font-size: 40px;
+  color: rgb(0, 0, 0);
+}
+
+@font-face {
+  font-family: "Brushboy";
+  src: url("./fonts/Brushboy-Regular.otf") format("truetype");
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "BulatovSPDemo";
+  src: url("./fonts/BulatovSPDemo.otf") format("truetype");
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Deledda";
+  src: url("./fonts/Deledda Open Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Everlasting";
+  src: url("./fonts/Everlasting.ttf") format("truetype");
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Vollda";
+  src: url("./fonts/Vollda-Bold.otf") format("truetype");
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "Littlewitch_lenamay";
+  src: url("./fonts/Littlewitch_lenamay_eng.otf") format("truetype");
+  font-style: normal;
+  font-weight: normal;
 }

@@ -11,12 +11,17 @@
 <body>
   <div id="app">
     <!-- Контейнер для регистрации и авторизации -->
-    <div id="auth-container">
-      <h2>Вход или регистрация</h2>
-      <input type="text" id="username" placeholder="Имя пользователя">
-      <input type="password" id="password" placeholder="Пароль">
-      <button id="login-btn">Войти</button>
-      <button id="register-btn">Регистрация</button>
+    <div id="auth-container" class="windowLogin">
+      <p class="ArtText">ArtGallery</p>
+      <p class="loginText">Авторизация</p>
+      <div class="printWin">
+        <input class="loginWin" type="text" id="username" placeholder="имя пользователя..">
+        <input class="loginWin" type="password" id="password" placeholder="пароль..">
+      </div>
+        <div class="windowBtn">
+        <button id="login-btn">Войти</button>
+        <button id="register-btn">Регистрация</button>
+      </div>
     </div>
 
     <!-- Контейнер для заметок -->
