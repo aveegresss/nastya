@@ -122,11 +122,11 @@ function getNotesStructure() {
 }
 
 document.getElementById("add-folder-btn").addEventListener("click", function () {
-  openModal("Создать папку", true);
+  openModal("Добавить фильтр", true);
 });
 
 document.getElementById("add-note-btn").addEventListener("click", function () {
-  openModal("Создать заметку", false);
+  openModal("Загрузить картину", false);
 });
 
 document.getElementById("save-item-btn").onclick = async function () {
@@ -194,13 +194,15 @@ function renderNotesTree(structure) {
   // Создаем селект для папок
   const folderSelect = document.createElement('select');
   folderSelect.className = 'folder-select';
-  folderSelect.innerHTML = '<option value="">Все заметки</option>';
+  folderSelect.innerHTML = '<option value="">Все картины</option>';
+  folderSelect.className = "checkPictures";
 
   // Добавляем папки в селект
   function addFolderOptions(items, level = 0) {
     items.forEach(item => {
       if (item.is_folder) {
         const option = document.createElement('option');
+        option.className = "checkVal";
         option.value = item.id;
         option.text = '  '.repeat(level) + item.title;
         folderSelect.appendChild(option);

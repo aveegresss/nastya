@@ -11,9 +11,9 @@
 
 <body>
   <div id="app">
+    <p class="ArtText">ArtGallery</p>
     <!-- Контейнер для регистрации и авторизации -->
     <div id="auth-container" class="windowLogin">
-      <p class="ArtText">ArtGallery</p>
       <p class="loginText">Авторизация</p>
       <div class="printWin">
         <input class="loginWin" type="text" id="username" placeholder="имя пользователя..">
@@ -27,32 +27,37 @@
 
     <!-- Контейнер для заметок -->
     <div id="notes-container" style="display: none;">
-      <div class="header">
-        <h2>Мои заметки</h2>
-        <button id="logout-btn">Выйти</button>
+      <div class="windowNvg">
+        <button class="userBtn"></button>
+        <button class="pictureBtn"></button>
+        <button class="logoutBtn" id="logout-btn">выход</button>
       </div>
-      <div class="actions">
-        <button id="add-folder-btn">Добавить папку</button>
-        <button id="add-note-btn">Добавить заметку</button>
+      <div class="content">
+        <div class="actions">
+          <button id="add-folder-btn">Добавить фильтр</button>
+          <button id="add-note-btn">Загрузить картину</button>
+        </div>
+        <div id="notes-tree"></div>
       </div>
-      <div id="notes-tree"></div>
     </div>
 
     <!-- Окно для добавления/редактирования -->
     <div id="modal" class="modal" style="display: none;">
       <div class="modal-content">
         <span id="close-modal" class="close">&times;</span>
-        <h3 id="modal-title"></h3>
-        <input type="text" id="item-title" placeholder="Название">
-        <textarea id="item-text" placeholder="Текст"></textarea>
+        <p class="loginText" id="modal-title"></p>
+        <input type="text" id="item-title" placeholder="Название" class="loginWin">
+        <textarea id="item-text" placeholder="Описание" class="loginWin"></textarea>
         <div class="image-upload">
-          <input type="file" id="item-image" accept="image/*">
+          <input class="uploadBtn" type="file" id="item-image" accept="image/*">
           <div id="image-preview"></div>
         </div>
-        <select id="parent-folder">
-          <option value="">Без папки</option>
-        </select>
-        <button id="save-item-btn">Сохранить</button>
+        <div class="windowBtnAdd">
+          <select id="parent-folder">
+            <option value="" class="checkPictures">Без папки</option>
+          </select>
+          <button id="save-item-btn">Сохранить</button>
+        </div>
       </div>
     </div>
   </div>
