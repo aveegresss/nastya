@@ -22,7 +22,7 @@ h2 {
 #notes-container {
   width: 100%;
   max-width: 1200px;
-  padding: 20px;
+  padding: 30px;
   display: flex;
   justify-content: start;
 }
@@ -231,9 +231,17 @@ textarea {
 /* Notes Grid */
 .notes-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 360px);
   gap: 20px;
   margin-top: 20px;
+}
+
+.notesTree {
+  display: flex;
+  max-width: 1000px;
+  width: 100%;
+  margin: 50px;
+  justify-content: start;
 }
 
 .note-item {
@@ -266,6 +274,8 @@ textarea {
   word-break: break-word;
   font-size: 15px;
   font-family: "Vollda";
+  max-height: 100px; /* Максимальная высота блока */
+  overflow-y: auto;
 }
 
 /* Modal */
@@ -275,7 +285,6 @@ textarea {
   width: 100%;
   height: 100%;
   background-color: rgba(255, 255, 255, 0);
-  position: fixed;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -309,7 +318,7 @@ textarea {
 .image-preview img,
 .note-image {
   max-width: 100% !important;
-  height: 200px !important;
+  height: 400px !important;
   width: 100% !important;
   object-fit: cover;
   border-radius: 5px;
